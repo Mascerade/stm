@@ -1,9 +1,8 @@
 from typing import Optional
-from selenium import webdriver
-from selenium.webdriver import chrome
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+
+'''
+Note: Cannot import manager.py for typing because of circular imports
+'''
 
 class Tab():
     def __init__(self,
@@ -14,11 +13,25 @@ class Tab():
         self.name = name
         self.url = url
         self.indicatorElement = indicatorElement
+        self.manager = None
         self.handleName: Optional[str] = None
+        self.position: Optional[int] = None
+
+    def setManager(self, manager):
+        '''
+        Assign a manager to the tab.
+        '''
+        self.manager = manager
 
     def setHandle(self, handleName: str):
         '''
         Assign the name of the handle that the webdriver uses for the tab.
         '''
         self.handleName = handleName
+    
+    def setPosition(self, position: int):
+        '''
+        Assign the index of the tab in the manager's tab list.
+        '''
+        self.position = position
     

@@ -1,62 +1,123 @@
 from typing import List, Optional
-from tab import Tab
+from stm.tab import Tab
+from time import sleep
 from selenium import webdriver
 from selenium.webdriver import chrome
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-class ChromeManager(webdriver.Chrome):
+class ChromeTabManager(webdriver.Chrome):
     def __init__(self, tabs: List[Tab], *args, **kwargs):
-        super(ChromeManager, self).__init__(*args, **kwargs)
-        self.tabs = tabs
-        self.currentTab: Optional[str] = None
+        super(ChromeTabManager, self).__init__(*args, **kwargs)
+        self.addedTabs: List[Tab] = []
+        self.openedTabs: List[Tab] = []
+        self.currentTab: Optional[Tab] = None
         self.newTabScript = '''window.open("{}", "_blank");'''
 
-    def __openTab(self, tab: Tab) -> None:
+        for tab in tabs:
+            tab.setManager(self)
+            self.addedTabs.append(tab)
+        
+    def __indexOfTab(self, locTab: Tab) -> Optional[int]:
         '''
-        Opens given tab.
+        Gets the index of a given tab in the tab list.
         '''
-        self.execute_script(self.newTabScript.format(tab.url))
-        # Set the tab's handle to the latest one added (so this tab)
-        tab.setHandle(self.window_handles[-1])
-    
+        for idx, tab in enumerate(self.addedTabs):
+            if tab is locTab:
+                return idx
+        
+        return None
+
     def __findTabByName(self, tabName: str) -> Optional[Tab]:
         '''
         Returns a Tab object if a tab in the list matches the name given.
         Otherwise, return None.
         '''
-        for tab in self.tabs:
+        for tab in self.addedTabs:
             if tab.name == tabName:
                 return tab
         
         return None
+    
+    def __setOpenedTabInfo(self, tab: Tab) -> None:
+        '''
+        Adds the necessary information to a newly opened tab including:
+          The handle assigned to it
+          The position it is at in the browser (according to the order).
+        Also sets the opened tab to the current tab
+        '''
+        self.openedTabs.append(tab)
+        tab.setHandle(self.window_handles[-1])
+        tab.setPosition(len(self.openedTabs) - 1)
+        self.currentTab = tab
 
-    def openTabByName(self, tabName: str) -> None:
+    def __openFirstTab(self, tab: Tab) -> None:
         '''
-        Opens a tab that is already added to the manager by the name of it.
+        First tab is special because we have to use "get" function instead of newTabScript
         '''
-        tab = self.__findTabByName(tabName)
-        if tab is not None:
-            self.__openTab(tab)
+        print('here in openFirstTab')
+        self.execute_script(self.newTabScript.format(tab.url))
+        self.switch_to.window(self.window_handles[0])
+        self.close()
+        self.__setOpenedTabInfo(tab)
+        self.switch_to.window(tab.handleName)
+        print('end of openFirstTab')
+
+    def __openNewTab(self, tab: Tab) -> None:
+        '''
+        Opens given tab.
+        '''
+        self.execute_script(self.newTabScript.format(tab.url))
+        self.__setOpenedTabInfo(tab)
 
     def openTabs(self) -> None:
         '''
-        Open the tabs passed in through the tab argument.
+        Open tabs that are unopened, but added.
         '''
-        for tab in self.tabs:
-            self.__openTab(tab)
+        for tab in self.addedTabs:
+            if tab.handleName is None:
+                print(f'Opened Tabs: {self.openedTabs}')
+                if len(self.openedTabs) == 0:
+                    self.__openFirstTab(tab)
+                    print('here after open')
+                else:
+                    self.__openNewTab(tab)
 
-    def addTab(self, name: str, url: str, indicatorElement: Optional[str]) -> None:
+    def addNewTab(self, tab: Tab) -> None:
         '''
-        Add a tab to the list of tabs.
+        Add a tab and assign it the manager.
         '''
-        nTab = Tab(name, url, indicatorElement)
-        self.tabs.append(nTab)
-    
+        self.addedTabs.append(tab)
+        tab.setManager(self)
+
+    def switchTabForward(self):
+        '''
+        Switch to the next tab.
+        '''
+        if self.currentTab.position == len(self.openedTabs) -1:
+            self.currentTab = self.openedTabs[0]
+        else:
+            self.currentTab = self.openedTabs[self.currentTab.position + 1]
+        
+        self.switch_to.window(self.currentTab.handleName)
+
+    def switchToTabByObj(self, tab: Tab) -> None:
+        '''
+        Switch to a specific tab.
+        '''
+        if tab.handleName is not None and tab.manager is self and self.currentTab is not tab:
+            self.currentTab = tab
+            self.switch_to.window(self.currentTab.handleName)
+
+        else:
+            print('Tab is either not part of this manager or is not open!')
+
 
 if __name__ == '__main__':
-    from time import sleep
+    caps = DesiredCapabilities().CHROME
+    caps['pageLoadStrategy'] = 'none'
 
     # Add Chrome options to change the user agent and get rid of the "Chrome is being automated" message.
     opts = chrome.options.Options()
@@ -67,8 +128,9 @@ if __name__ == '__main__':
     tab1 = Tab('Walmart', 'https://www.github.com/')
     tab2 = Tab('Amazon', 'https://www.google.com/')
     tab3 = Tab('Newegg', 'https://www.apple.com/')
-    driver = ChromeManager(tabs=[tab1, tab2, tab3],
+    driver = ChromeTabManager(tabs=[tab1, tab2, tab3],
                            executable_path='./chromedriver',
+                           desired_capabilities=caps,
                            options=opts)
     driver.openTabs()
     sleep(5)
