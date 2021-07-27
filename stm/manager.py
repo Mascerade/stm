@@ -133,6 +133,7 @@ class ChromeTabManager(webdriver.Chrome):
             
 
 if __name__ == '__main__':
+    # Be able to manipulate the page right when we arrive on it
     caps = DesiredCapabilities().CHROME
     caps['pageLoadStrategy'] = 'none'
 
@@ -152,10 +153,5 @@ if __name__ == '__main__':
 
     # Open all the tabs that were added on the manager's initialization
     manager.open_tabs()
-    page_sources = manager.execute_all_on_indicated()
-
-    # Confirm that getting the page sources worked.
-    for key, value in page_sources.items():
-        print(key, value[:100])
-        print('________________________________')
+    sleep(5)
     manager.quit()
