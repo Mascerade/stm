@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, Any, List, Optional
 from stm.tab import Tab
 from time import sleep
 from selenium import webdriver
@@ -66,7 +66,7 @@ class ChromeTabManager(webdriver.Chrome):
         self.switch_to.window(self.window_handles[0])
         self.close()
         self.__set_opened_tab_info(tab)
-        self.switch_to.window(tab.handle_name)
+        self.switch_to.window(tab.window_handle)
 
     def __open_new_tab(self, tab: Tab) -> None:
         '''
@@ -80,7 +80,7 @@ class ChromeTabManager(webdriver.Chrome):
         Open tabs that are unopened, but added.
         '''
         for tab in self.added_tabs:
-            if tab.handle_name is None:
+            if tab.window_handle is None:
                 if len(self.opened_tabs) == 0:
                     self.__open_first_tab(tab)
                 else:
@@ -102,19 +102,35 @@ class ChromeTabManager(webdriver.Chrome):
         else:
             self.current_tab = self.opened_tabs[self.current_tab.position + 1]
         
-        self.switch_to.window(self.current_tab.handle_name)
+        self.switch_to.window(self.current_tab.window_handle)
 
     def switch_to_tab_by_obj(self, tab: Tab) -> None:
         '''
         Switch to a specific tab.
         '''
-        if tab.handle_name is not None and tab.manager is self and self.current_tab is not tab:
+        if tab.window_handle is not None and tab.manager is self and self.current_tab is not tab:
             self.current_tab = tab
-            self.switch_to.window(self.current_tab.handle_name)
+            self.switch_to.window(self.current_tab.window_handle)
 
         else:
             print('Tab is either not part of this manager or is not open!')
 
+    def execute_all_on_indicated(self, timeout=10) -> Dict[str, Any]:
+        '''
+        For all the currently open tabs, when the indicator element is present,
+        run the tab's on_indicator_elem_found method and return the results. 
+        '''
+        ret: Dict[str, Any] = {}
+        for tab in self.opened_tabs:
+            if tab.indicator_element is not None:
+                self.switch_to.window(tab.window_handle)
+                WebDriverWait(self, timeout).until(
+                    EC.presence_of_element_located((tab.indicator_element[0], tab.indicator_element[1]))
+                )
+                ret[tab.name] = tab.on_indicator_elem_found()
+        
+        return ret
+            
 
 if __name__ == '__main__':
     caps = DesiredCapabilities().CHROME
@@ -126,9 +142,9 @@ if __name__ == '__main__':
     opts.add_experimental_option('excludeSwitches', ['enable-automation'])
 
     # Create the tabs to use and create the manager
-    tab1 = Tab('GitHub', 'https://www.github.com/')
-    tab2 = Tab('Google', 'https://www.google.com/')
-    tab3 = Tab('Apple', 'https://www.apple.com/')
+    tab1 = Tab('Amazon', 'https://www.amazon.com/', indicator_element=(By.ID, 'navbar'))
+    tab2 = Tab('Google', 'https://www.google.com/', indicator_element=(By.ID, 'hpctaplay'))
+    tab3 = Tab('Apple', 'https://www.apple.com/', indicator_element=(By.ID, 'ac-globalnav'))
     manager = ChromeTabManager(tabs=[tab1, tab2, tab3],
                            executable_path='./chromedriver',
                            desired_capabilities=caps,
@@ -136,6 +152,10 @@ if __name__ == '__main__':
 
     # Open all the tabs that were added on the manager's initialization
     manager.open_tabs()
-    sleep(5)
+    page_sources = manager.execute_all_on_indicated()
 
+    # Confirm that getting the page sources worked.
+    for key, value in page_sources.items():
+        print(key, value[:100])
+        print('________________________________')
     manager.quit()

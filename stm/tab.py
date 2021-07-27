@@ -1,17 +1,24 @@
-# Note: Cannot import manager.py for typing because of circular imports
-from typing import Optional
+from __future__ import annotations
+from typing import Sequence, Optional, Union, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from stm.manager import ChromeTabManager
 
 class Tab():
+    '''
+    Class that contains information for each tab opened.
+    indicator_element: A tuple of the type of element to by found (By.ELEMENT_TYPE)
+                       and the string for that property.
+    '''
     def __init__(self,
                  name: str,
                  url: str,
-                 indicator_element: Optional[str] = None):
+                 indicator_element: Optional[Sequence[Union[Any, str]]] = None):
 
         self.name = name
         self.url = url
         self.indicator_element = indicator_element
-        self.manager = None
-        self.handle_name: Optional[str] = None
+        self.manager: Optional[ChromeTabManager] = None
+        self.window_handle: Optional[str] = None
         self.position: Optional[int] = None
 
     def set_manager(self, manager):
@@ -24,11 +31,21 @@ class Tab():
         '''
         Assign the name of the handle that the webdriver uses for the tab.
         '''
-        self.handle_name = handleName
+        self.window_handle = handleName
     
     def set_position(self, position: int):
         '''
         Assign the index of the tab in the manager's tab list.
         '''
         self.position = position
-        
+    
+    def on_indicator_elem_found(self) -> Any:
+        '''
+        Function that executes onece the indicator element is found.
+        Only applies if you are use (INSERT METHOD NAME HERE LOL).
+        Default functionality is to simply return the page_source.
+        '''
+        if self.manager is not None:
+            return self.manager.page_source
+        else:
+            return None
