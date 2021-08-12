@@ -7,6 +7,8 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+
 
 class ChromeTabManager(webdriver.Chrome):
     '''
@@ -124,13 +126,15 @@ class ChromeTabManager(webdriver.Chrome):
         for tab in self.opened_tabs:
             if tab.indicator_element is not None:
                 self.switch_to.window(tab.window_handle)
-                WebDriverWait(self, timeout).until(
-                    EC.presence_of_element_located((tab.indicator_element[0], tab.indicator_element[1]))
-                )
-                ret[tab.name] = tab.on_indicator_elem_found()
+                try:
+                    WebDriverWait(self, timeout).until(
+                        EC.presence_of_element_located((tab.indicator_element[0], tab.indicator_element[1]))
+                    )
+                    ret[tab.name] = tab.on_indicator_elem_found()
+                except TimeoutException:
+                    ret[tab.name] = None
         
         return ret
-            
 
 if __name__ == '__main__':
     # Be able to manipulate the page right when we arrive on it
@@ -144,7 +148,7 @@ if __name__ == '__main__':
 
     # Create the tabs to use and create the manager
     tab1 = Tab('Amazon', 'https://www.amazon.com/', indicator_element=(By.ID, 'navbar'))
-    tab2 = Tab('Google', 'https://www.google.com/', indicator_element=(By.ID, 'hpctaplay'))
+    tab2 = Tab('Google', 'https://www.google.com/', indicator_element=(By.CLASS_NAME, 'L3eUgb'))
     tab3 = Tab('Apple', 'https://www.apple.com/', indicator_element=(By.ID, 'ac-globalnav'))
     manager = ChromeTabManager(tabs=[tab1, tab2, tab3],
                            executable_path='./chromedriver',

@@ -15,7 +15,7 @@ opts.add_experimental_option('excludeSwitches', ['enable-automation'])
 
 # Create the tabs to use and create the manager
 tab1 = Tab('Amazon', 'https://www.amazon.com/', indicator_element=(By.ID, 'navbar'))
-tab2 = Tab('Google', 'https://www.google.com/', indicator_element=(By.ID, 'hpctaplay'))
+tab2 = Tab('Google', 'https://www.google.com/', indicator_element=(By.CLASS_NAME, 'L3eUgb'))
 tab3 = Tab('Apple', 'https://www.apple.com/', indicator_element=(By.ID, 'ac-globalnav'))
 manager = ChromeTabManager(tabs=[tab1, tab2, tab3],
                         executable_path='./chromedriver',
