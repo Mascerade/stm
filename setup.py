@@ -5,7 +5,7 @@ with open("README.md", 'r') as f:
 
 setup(
    name='stm',
-   version='0.1',
+   version='0.2',
    description='A wrapper around Selenium webdriver that allows for easier management of tabs.',
    license="MIT",
    long_description=long_description,

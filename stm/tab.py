@@ -12,13 +12,22 @@ class Tab():
     def __init__(self,
                  name: str,
                  url: str,
+                 # For waiting for the page to load based on an element
                  indicator_element: Optional[Sequence[Union[Any, str]]] = None,
-                 implicit_wait: Optional[int] = None):
+                 # If you know how long it will take for the page to load
+                 explicit_wait: Optional[int] = None,
+                 # All of these are for if you are waiting for the page to load
+                 wait_page_load: Optional[bool] = False,
+                 max_wait: Optional[int] = 10,
+                 load_type: str = 'complete'):
 
         self.name = name
         self.url = url
         self.indicator_element = indicator_element
-        self.implicit_wait = implicit_wait
+        self.explicit_wait = explicit_wait
+        self.wait_page_load = wait_page_load
+        self.max_wait = max_wait
+        self.load_type = load_type
         self.manager: Optional[ChromeTabManager] = None
         self.window_handle: Optional[str] = None
         self.position: Optional[int] = None
@@ -41,7 +50,7 @@ class Tab():
         '''
         self.position = position
     
-    def on_indicator_elem_found(self) -> Any:
+    def on_indicated(self) -> Any:
         '''
         Function that executes once the indicator element is found.
         Only applies if you are using execute_all_on_indicated.
@@ -52,7 +61,7 @@ class Tab():
         else:
             return None
     
-    def on_indicator_elem_not_found(self) -> Any:
+    def on_not_indicated(self) -> Any:
         '''
         Function that executes if the indicator element is not found.
         Onlyt applies if you are using execute_all_on_indicated

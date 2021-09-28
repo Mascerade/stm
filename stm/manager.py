@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Optional
 from stm.tab import Tab
-from time import sleep
+import time
 from selenium import webdriver
 from selenium.webdriver import chrome
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -77,6 +77,12 @@ class ChromeTabManager(webdriver.Chrome):
         self.execute_script(self.newTabScript.format(tab.url))
         self.__set_opened_tab_info(tab)
 
+    def __check_page_state(self) -> str:
+        '''
+        Checks the value of document.readyState
+        '''
+        return self.execute_script('return document.readyState')
+
     def open_tabs(self) -> None:
         '''
         Open tabs that are unopened, but added.
@@ -120,25 +126,44 @@ class ChromeTabManager(webdriver.Chrome):
     def execute_all_on_indicated(self, timeout=10) -> Dict[str, Any]:
         '''
         For all the currently open tabs, when the indicator element is present,
-        or after waiting for a specified time (implicit_wait),
+        or after waiting for a specified time (explicit_wait),
         run the tab's on_indicator_elem_found method and return the results. 
         '''
         ret: Dict[str, Any] = {}
+        begin_time = time.time()
         for tab in self.opened_tabs:
+            self.switch_to.window(tab.window_handle)
             if tab.indicator_element is not None:
-                self.switch_to.window(tab.window_handle)
                 try:
                     WebDriverWait(self, timeout).until(
                         EC.presence_of_element_located((tab.indicator_element[0], tab.indicator_element[1]))
                     )
-                    ret[tab.name] = tab.on_indicator_elem_found()
+                    ret[tab.name] = tab.on_indicated()
                 except TimeoutException:
-                    ret[tab.name] = tab.on_indicator_elem_not_found()
-            elif tab.implicit_wait is not None:
-                self.switch_to.window(tab.window_handle)
-                sleep(tab.implicit_wait)
-                ret[tab.name] = tab.on_indicator_elem_found()
-    
+                    ret[tab.name] = tab.on_not_indicated()
+            elif tab.explicit_wait is not None:
+                # The page most likely has already been loading as other pages load
+                # so subtract the amount of time it has already been waiting from the 
+                # explicit wait time (speeds things up)
+                time_diff = tab.explicit_wait - (time.time() - begin_time)
+                if time_diff > 0:
+                    time.sleep(time_diff)
+                ret[tab.name] = tab.on_indicated()
+            elif tab.wait_page_load:
+                time_waited = 0
+                # Need this because initially (for some reason) document.readyState returns 'complete'
+                # before the Ajax requests to load the page have been made
+                # So by waiting for a div (just needed something that 99.9% of websites have)
+                # we are able to wait until some initial DOM as loaded
+                WebDriverWait(self, timeout).until(
+                    EC.presence_of_element_located((By.TAG_NAME, 'div'))
+                )
+                while time_waited < tab.max_wait:
+                    if (self.__check_page_state() == tab.load_type):
+                        ret[tab.name] = tab.on_indicated()
+                        break
+                    time.sleep(0.5)
+                    time_waited += 0.5
         return ret
 
 if __name__ == '__main__':
@@ -162,5 +187,5 @@ if __name__ == '__main__':
 
     # Open all the tabs that were added on the manager's initialization
     manager.open_tabs()
-    sleep(5)
+    time.sleep(5)
     manager.quit()
