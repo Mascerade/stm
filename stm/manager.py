@@ -136,7 +136,7 @@ class ChromeTabManager(webdriver.Chrome):
                     ret[tab.name] = tab.on_indicator_elem_not_found()
             elif tab.implicit_wait is not None:
                 self.switch_to.window(tab.window_handle)
-                sleep(tab.implicit_wait * 1000)
+                sleep(tab.implicit_wait)
                 ret[tab.name] = tab.on_indicator_elem_found()
     
         return ret
