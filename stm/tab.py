@@ -12,11 +12,13 @@ class Tab():
     def __init__(self,
                  name: str,
                  url: str,
-                 indicator_element: Optional[Sequence[Union[Any, str]]] = None):
+                 indicator_element: Optional[Sequence[Union[Any, str]]] = None,
+                 implicit_wait: Optional[int] = None):
 
         self.name = name
         self.url = url
         self.indicator_element = indicator_element
+        self.implicit_wait = implicit_wait
         self.manager: Optional[ChromeTabManager] = None
         self.window_handle: Optional[str] = None
         self.position: Optional[int] = None

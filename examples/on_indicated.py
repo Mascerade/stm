@@ -17,7 +17,8 @@ opts.add_experimental_option('excludeSwitches', ['enable-automation'])
 tab1 = Tab('Amazon', 'https://www.amazon.com/', indicator_element=(By.ID, 'navbar'))
 tab2 = Tab('Google', 'https://www.google.com/', indicator_element=(By.CLASS_NAME, 'L3eUgb'))
 tab3 = Tab('Apple', 'https://www.apple.com/', indicator_element=(By.ID, 'ac-globalnav'))
-manager = ChromeTabManager(tabs=[tab1, tab2, tab3],
+tab4 = Tab('Apple', 'https://www.apple.com/', implicit_wait=10)
+manager = ChromeTabManager(tabs=[tab1, tab2, tab3, tab4],
                         executable_path='./bin/chromedriver',
                         desired_capabilities=caps,
                         options=opts)

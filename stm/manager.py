@@ -120,6 +120,7 @@ class ChromeTabManager(webdriver.Chrome):
     def execute_all_on_indicated(self, timeout=10) -> Dict[str, Any]:
         '''
         For all the currently open tabs, when the indicator element is present,
+        or after waiting for a specified time (implicit_wait),
         run the tab's on_indicator_elem_found method and return the results. 
         '''
         ret: Dict[str, Any] = {}
@@ -133,7 +134,11 @@ class ChromeTabManager(webdriver.Chrome):
                     ret[tab.name] = tab.on_indicator_elem_found()
                 except TimeoutException:
                     ret[tab.name] = tab.on_indicator_elem_not_found()
-        
+            elif tab.implicit_wait is not None:
+                self.switch_to.window(tab.window_handle)
+                sleep(tab.implicit_wait * 1000)
+                ret[tab.name] = tab.on_indicator_elem_found()
+    
         return ret
 
 if __name__ == '__main__':
