@@ -132,7 +132,7 @@ class ChromeTabManager(webdriver.Chrome):
                     )
                     ret[tab.name] = tab.on_indicator_elem_found()
                 except TimeoutException:
-                    ret[tab.name] = None
+                    ret[tab.name] = tab.on_indicator_elem_not_found()
         
         return ret
 

@@ -22,7 +22,7 @@ tab1 = Tab('GitHub', 'https://www.github.com/')
 tab2 = Tab('Google', 'https://www.google.com/')
 tab3 = Tab('Apple', 'https://www.apple.com/')
 manager = ChromeTabManager(tabs=[tab1, tab2, tab3],
-                        executable_path='./chromedriver',
+                        executable_path='./bin/chromedriver',
                         desired_capabilities=caps,
                         options=opts)
 

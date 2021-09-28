@@ -41,11 +41,23 @@ class Tab():
     
     def on_indicator_elem_found(self) -> Any:
         '''
-        Function that executes onece the indicator element is found.
-        Only applies if you are use (INSERT METHOD NAME HERE LOL).
+        Function that executes once the indicator element is found.
+        Only applies if you are using execute_all_on_indicated.
         Default functionality is to simply return the page_source.
         '''
         if self.manager is not None:
             return self.manager.page_source
         else:
             return None
+    
+    def on_indicator_elem_not_found(self) -> Any:
+        '''
+        Function that executes if the indicator element is not found.
+        Onlyt applies if you are using execute_all_on_indicated
+        Default functionality is to simply return the page_source.
+        '''
+        if self.manager is not None:
+            return self.manager.page_source
+        else:
+            return None
+    
